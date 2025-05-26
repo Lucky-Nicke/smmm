@@ -3,9 +3,10 @@ package club.lanxige.smmm.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,9 +18,19 @@ public class Product {
     private Integer productId;
     private String productName;
     private BigDecimal unitPrice;
-    private String quantity;
+    private BigDecimal quantity; // 改为Integer类型
+    private String supplierName; // 新增字段
+    private String productType; // 新增字段
+    private String unit_of_measurement; // 新增字段
+    private String manufacturer; // 新增字段
 
-    // 保持为 LocalDateTime 类型，与数据库字段匹配
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDateTime restockTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime restockTime; // 改为LocalDateTime类型
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createTime; // 新增字段
+
+    @UpdateTimestamp
+    private LocalDateTime updateTime; // 新增字段
 }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class PurchaseRecordDto {
@@ -12,13 +12,14 @@ public class PurchaseRecordDto {
     private Integer productId;
     private String productName;
     private String productType;
-    private String quantity;
+    private BigDecimal quantity; // 改为BigDecimal类型
+    private String unit_of_measurement; // 新增字段
     private String supplierName;
+    private String manufacturer; // 新增字段
     private Integer purchaserId;
 
-    // 修改为 LocalDate 类型
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate purchaseTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") // 修改日期格式
+    private LocalDateTime purchaseTime; // 改为LocalDateTime类型
 
     private BigDecimal purchaseAllPrice;
 }

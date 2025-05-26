@@ -7,7 +7,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,15 +19,21 @@ public class PurchaseRecord {
     private Integer productId;
     private String productName;
     private String productType;
-    private String quantity;
+    private BigDecimal quantity; // 改为Integer类型
+    private String unit_of_measurement; // 新增字段
     private String supplierName;
+    private String manufacturer; // 新增字段
     private Integer purchaserId;
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate purchaseTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") // 修改日期格式
+    private LocalDateTime purchaseTime; // 改为LocalDateTime类型
+
     private BigDecimal purchaseAllPrice;
+
     @CreationTimestamp
-    @Column(updatable = false) // 禁止更新
+    @Column(updatable = false)
     private LocalDateTime createTime;
+
     @UpdateTimestamp
     private LocalDateTime updateTime;
 }

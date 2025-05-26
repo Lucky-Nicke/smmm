@@ -8,9 +8,6 @@ import club.lanxige.smmm.service.PurchaseService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,46 +35,87 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     @Override
     public void editRecord(PurchaseRecord record) {
+        // 检查记录是否存在
+        Optional<PurchaseRecord> optionalRecord = purchaseRecordRepository.findById(record.getPurchaseId());
+        if (optionalRecord.isEmpty()) {
+            throw new IllegalArgumentException("采购记录不存在，ID: " + record.getPurchaseId());
+        }
+
+        // 更新产品信息
+        updateProductFromPurchaseRecord(record);
+
+        // 更新采购记录
         purchaseRecordRepository.save(record);
     }
 
     @Override
     @Transactional
     public Integer addRecord(PurchaseRecord record) {
-        String productName = record.getProductName();
-        String quantity = record.getQuantity();
-        LocalDate purchaseDate = record.getPurchaseTime();
-        LocalDateTime restockTime = purchaseDate != null ? purchaseDate.atStartOfDay() : null;
+        // 更新或创建产品信息
+        Product product = updateOrCreateProduct(record);
 
-        // 根据商品名称查询商品是否存在
-        Optional<Product> productOptional = productRepository.findByProductName(productName);
+        // 设置采购记录的产品ID
+        record.setProductId(product.getProductId());
+
+        // 保存采购记录
+        PurchaseRecord savedRecord = purchaseRecordRepository.save(record);
+        return savedRecord.getPurchaseId();
+    }
+
+    private Product updateOrCreateProduct(PurchaseRecord record) {
+        // 根据商品名称和供应商查询商品是否存在
+        Optional<Product> productOptional = productRepository.findByProductNameAndSupplierName(
+                record.getProductName(), record.getSupplierName());
+
         Product product;
-
         if (productOptional.isEmpty()) {
-            // 商品不存在，创建新商品（让数据库生成productId）
+            // 商品不存在，创建新商品
             product = new Product();
-            product.setProductName(productName);
-            product.setQuantity(quantity);
-            product.setRestockTime(restockTime);
-            product.setUnitPrice(BigDecimal.ZERO); // 默认单价
+            product.setProductName(record.getProductName());
+            product.setProductType(record.getProductType());
+            product.setQuantity(record.getQuantity());
+            product.setUnit_of_measurement(record.getUnit_of_measurement());
+            product.setSupplierName(record.getSupplierName());
+            product.setManufacturer(record.getManufacturer());
+            product.setRestockTime(record.getPurchaseTime());
+            product.setUnitPrice(null); // 默认单价
 
-            // 保存新商品并获取生成的productId
+            // 保存新商品
             product = productRepository.save(product);
-
-            // 更新采购记录中的productId为新生成的ID
-            record.setProductId(product.getProductId());
         } else {
             // 商品已存在，更新库存信息
             product = productOptional.get();
-            product.setQuantity(quantity);
-            product.setRestockTime(restockTime);
-            productRepository.save(product);
+            product.setQuantity(product.getQuantity().add(record.getQuantity())); // 使用BigDecimal的add方法累加
+            product.setRestockTime(record.getPurchaseTime());
+            product.setProductType(record.getProductType());
+            product.setUnit_of_measurement(record.getUnit_of_measurement());
+            product.setManufacturer(record.getManufacturer());
+
+            // 更新商品信息
+            product = productRepository.save(product);
         }
 
-        // 保存采购记录（使用已存在或新创建的商品ID）
-        purchaseRecordRepository.save(record);
+        return product;
+    }
 
-        PurchaseRecord savedRecord = purchaseRecordRepository.save(record);
-        return savedRecord.getPurchaseId();
+    private void updateProductFromPurchaseRecord(PurchaseRecord record) {
+        // 根据商品ID查询商品
+        Optional<Product> productOptional = productRepository.findById(record.getProductId());
+
+        if (productOptional.isPresent()) {
+            Product product = productOptional.get();
+
+            // 更新商品信息
+            product.setProductName(record.getProductName());
+            product.setProductType(record.getProductType());
+            product.setQuantity(record.getQuantity());
+            product.setUnit_of_measurement(record.getUnit_of_measurement());
+            product.setSupplierName(record.getSupplierName());
+            product.setManufacturer(record.getManufacturer());
+            product.setRestockTime(record.getPurchaseTime());
+
+            // 保存更新
+            productRepository.save(product);
+        }
     }
 }
