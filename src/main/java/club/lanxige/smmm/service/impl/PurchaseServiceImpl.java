@@ -43,7 +43,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     @Override
     @Transactional
-    public void addRecord(PurchaseRecord record) {
+    public Integer addRecord(PurchaseRecord record) {
         String productName = record.getProductName();
         String quantity = record.getQuantity();
         LocalDate purchaseDate = record.getPurchaseTime();
@@ -76,5 +76,8 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         // 保存采购记录（使用已存在或新创建的商品ID）
         purchaseRecordRepository.save(record);
+
+        PurchaseRecord savedRecord = purchaseRecordRepository.save(record);
+        return savedRecord.getPurchaseId();
     }
 }

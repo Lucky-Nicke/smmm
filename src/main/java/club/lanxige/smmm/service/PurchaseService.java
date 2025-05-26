@@ -8,5 +8,5 @@ public interface PurchaseService {
     List<PurchaseRecord> listAllRecords();
     void deleteRecord(Integer purchaseId);
     void editRecord(PurchaseRecord record);
-    void addRecord(PurchaseRecord record);
+    Integer  addRecord(PurchaseRecord record);
 }
