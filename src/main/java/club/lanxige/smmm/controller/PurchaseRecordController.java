@@ -23,7 +23,7 @@ public class PurchaseRecordController {
         return ApiResponse.success("查询成功", records);
     }
 
-    @PostMapping("/del")
+    @DeleteMapping("/del")
     public ApiResponse<?> delete(@RequestBody PurchaseRecord record) {
         try {
             purchaseService.deleteRecord(record.getPurchaseId());
@@ -45,9 +45,9 @@ public class PurchaseRecordController {
 
     @PostMapping("/add")
     public ApiResponse<?> add(@RequestBody PurchaseRecord record) {
-        try {
+    try {
             Integer purchaseId = purchaseService.addRecord(record);
-            return ApiResponse.success("采购记录添加成功", purchaseId, "/purchase/list");
+            return ApiResponse.success("采购记录添加成功", "/purchase/list", purchaseId );
         } catch (IllegalArgumentException e) {
             return ApiResponse.error(e.getMessage());
         } catch (Exception e) {

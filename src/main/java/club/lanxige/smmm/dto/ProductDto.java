@@ -15,6 +15,7 @@ public class ProductDto {
     private String supplierName; // 新增字段
     private String productType; // 新增字段
     private String unit_of_measurement; // 新增字段
+    private Integer operatorId; // 新增数据库中存在的字段
     private String manufacturer; // 新增字段
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
