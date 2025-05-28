@@ -82,6 +82,7 @@ public class ProductServiceImpl implements ProductService {
         product.setOperatorId(productDto.getOperatorId());
         product.setManufacturer(productDto.getManufacturer());
         product.setRestockTime(productDto.getRestockTime());
+        product.setBarcode(productDto.getBarcode()); // 新增条形码映射
         return product;
     }
 
@@ -98,6 +99,7 @@ public class ProductServiceImpl implements ProductService {
         dto.setOperatorId(product.getOperatorId());
         dto.setManufacturer(product.getManufacturer());
         dto.setRestockTime(product.getRestockTime());
+        dto.setBarcode(product.getBarcode()); // 新增条形码映射
         return dto;
     }
 }

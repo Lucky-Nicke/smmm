@@ -13,13 +13,14 @@ public class PurchaseRecordDto {
     private String productName;
     private String productType;
     private BigDecimal quantity; // 改为BigDecimal类型
+    private String barcode; // 新增条形码字段
     private String unit_of_measurement; // 新增字段
     private String supplierName;
     private String manufacturer; // 新增字段
     private Integer purchaserId;
+    private BigDecimal purchaseAllPrice;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") // 修改日期格式
     private LocalDateTime purchaseTime; // 改为LocalDateTime类型
 
-    private BigDecimal purchaseAllPrice;
 }

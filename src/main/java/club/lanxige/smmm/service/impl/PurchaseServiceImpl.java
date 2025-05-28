@@ -80,6 +80,11 @@ public class PurchaseServiceImpl implements PurchaseService {
             product.setRestockTime(record.getPurchaseTime());
             product.setUnitPrice(null); // 默认单价
 
+            if (record.getBarcode() == null || record.getBarcode().isEmpty()) {
+                throw new IllegalArgumentException("采购记录必须包含条形码"); // 提前校验
+            }
+            product.setBarcode(record.getBarcode()); // 赋值给产品实体
+
             // 保存新商品
             product = productRepository.save(product);
         } else {
