@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -101,5 +102,19 @@ public class ProductServiceImpl implements ProductService {
         dto.setRestockTime(product.getRestockTime());
         dto.setBarcode(product.getBarcode()); // 新增条形码映射
         return dto;
+    }
+
+    @Override
+    public Optional<Product> findByBarcode(String barcode) {
+        return productRepository.findByBarcode(barcode);
+    }
+
+    @Override
+    public Product updateQuantity(Product product, Integer quantity) {
+        if (product.getQuantity() == null || product.getQuantity().intValue() < quantity) {
+            throw new IllegalArgumentException("库存不足");
+        }
+        product.setQuantity(BigDecimal.valueOf(product.getQuantity().intValue() - quantity));
+        return productRepository.save(product);
     }
 }

@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Integer> {
     Optional<Product> findByProductName(String productName);
+    Optional<Product> findByBarcode(String barcode); // 添加条形码查询方法
 
-    // 新增方法：根据产品名称和供应商查询产品
     Optional<Product> findByProductNameAndSupplierName(String productName, String supplierName);
 }
