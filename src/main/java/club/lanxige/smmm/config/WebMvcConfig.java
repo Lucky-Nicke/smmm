@@ -9,11 +9,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // 匹配所有接口
-                .allowedOrigins("http://localhost:3000") // 指定前端域名（如 React/Vue 前端地址）
-                .allowedMethods("GET", "POST", "PUT", "DELETE")
+        registry.addMapping("/**")
+                .allowedMethods("*")
                 .allowedHeaders("*")
-                .allowCredentials(true) // 允许携带 Cookie
-                .maxAge(3600); // 缓存时间（秒）
+                .allowedOriginPatterns("*") // 允许所有域名模式
+                .allowCredentials(true);
     }
-}
+};

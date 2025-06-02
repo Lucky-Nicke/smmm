@@ -45,9 +45,9 @@ public class UserServiceImpl implements UserService {
 
     private String getRedirectUrlByRole(User.Role role) {
         return switch (role) {
-            case WAREHOUSE_MANAGER -> "/warehouse/dashboard";
-            case CASHIER -> "/cashier/pos";
-            case SYSTEM_ADMIN -> "/admin/dashboard";
+            case WAREHOUSE_MANAGER -> "/warehouse/admin-frame.html";
+            case CASHIER -> "/cashier/cashier-frame.html";
+            case SYSTEM_ADMIN -> "/smmm_html/admin/admin-frame.html";
             case PURCHASER -> "/purchase/orders";
         };
     }
