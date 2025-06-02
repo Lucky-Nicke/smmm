@@ -13,4 +13,7 @@ public interface ProductService {
     void deleteProduct(Integer productId);
     Optional<Product> findByBarcode(String barcode);
     Product updateQuantity(Product product, Integer quantity);
+
+    // 新增方法：获取产品总数
+    long getTotalCount();
 }

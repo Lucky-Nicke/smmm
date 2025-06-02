@@ -117,4 +117,10 @@ public class ProductServiceImpl implements ProductService {
         product.setQuantity(BigDecimal.valueOf(product.getQuantity().intValue() - quantity));
         return productRepository.save(product);
     }
+
+    // 新增方法：获取产品总数
+    @Override
+    public long getTotalCount() {
+        return productRepository.count();
+    }
 }

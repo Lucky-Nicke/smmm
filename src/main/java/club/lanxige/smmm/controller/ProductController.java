@@ -1,6 +1,7 @@
 package club.lanxige.smmm.controller;
 
 import club.lanxige.smmm.dto.ApiResponse;
+import club.lanxige.smmm.dto.LayuiResponse;
 import club.lanxige.smmm.dto.ProductDto;
 import club.lanxige.smmm.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +20,15 @@ public class ProductController {
 
     // 查询所有产品
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<List<ProductDto>>> listProducts() {
-        List<ProductDto> products = productService.getAllProducts();
-        return ResponseEntity.ok(ApiResponse.success("查询成功", products));
+    public LayuiResponse<ProductDto> getProducts() {
+        // 获取产品列表
+        List<ProductDto> productList = productService.getAllProducts();
+
+        // 获取总记录数
+        long total = productService.getTotalCount();
+
+        // 使用LayuiResponse封装响应数据
+        return LayuiResponse.success(productList, total);
     }
 
     // 添加产品
