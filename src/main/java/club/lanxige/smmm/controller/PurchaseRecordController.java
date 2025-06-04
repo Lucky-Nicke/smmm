@@ -1,6 +1,7 @@
 package club.lanxige.smmm.controller;
 
 import club.lanxige.smmm.dto.ApiResponse;
+import club.lanxige.smmm.dto.LayuiResponse;
 import club.lanxige.smmm.entity.PurchaseRecord;
 import club.lanxige.smmm.service.PurchaseService;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +19,9 @@ public class PurchaseRecordController {
     }
 
     @GetMapping("/list")
-    public ApiResponse<List<PurchaseRecord>> list() {
+    public LayuiResponse<PurchaseRecord> list() {
         List<PurchaseRecord> records = purchaseService.listAllRecords();
-        return ApiResponse.success("查询成功", records);
+        return LayuiResponse.success(records, records.size());
     }
 
     @DeleteMapping("/del")

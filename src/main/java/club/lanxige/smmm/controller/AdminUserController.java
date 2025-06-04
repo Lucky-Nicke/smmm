@@ -1,6 +1,7 @@
 package club.lanxige.smmm.controller;
 
 import club.lanxige.smmm.dto.ApiResponse;
+import club.lanxige.smmm.dto.LayuiResponse;
 import club.lanxige.smmm.entity.User;
 import club.lanxige.smmm.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +17,9 @@ public class AdminUserController {
     private UserService userService;
 
     @GetMapping("/list")
-    public ApiResponse<List<User>> listUsers() {
+    public LayuiResponse<User> listUsers() {
         List<User> users = userService.getAllUsers();
-        return ApiResponse.success("查询成功", users);
+        return LayuiResponse.success(users, users.size());
     }
 
     @PostMapping("/add")
