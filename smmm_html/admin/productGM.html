@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>商品管理</title>
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/css/base.css">
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/css/iconfont.css">
+    <script type="text/javascript" src="../../smmm_html/framework/jquery-1.11.3.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/layui/css/layui.css">
+    <script type="text/javascript" src="../../smmm_html/layui/layui.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/css/jquery.mCustomScrollbar.css">
+    <script src="../../smmm_html/framework/jquery-ui-1.10.4.min.js"></script>
+    <script src="../../smmm_html/framework/jquery.mousewheel.min.js"></script>
+    <script src="../../smmm_html/framework/jquery.mCustomScrollbar.min.js"></script>
+    <script src="../../smmm_html/framework/cframe.js"></script>
+</head>
+
+<body>
+    <div style="padding: 20px;">
+        <button class="layui-btn" id="addProductBtn">添加商品</button>
+        <table class="layui-hide" id="productTable" lay-filter="productTable"></table>
+    </div>
+
+    <table id="productTable" lay-filter="productTable"></table>
+
+    <script>
+        layui.use(['table', 'layer', 'util'], function () {
+            var table = layui.table;
+            var layer = layui.layer;
+            var util = layui.util;
+
+            // 渲染表格
+            table.render({
+                elem: '#productTable',
+                url: 'http://localhost:8081/api/product/list',
+                method: 'get',
+                cols: [[
+                    { field: 'productId', title: '商品ID' },
+                    { field: 'productName', title: '商品名' },
+                    { field: 'productType', title: '商品类型' },
+                    {
+                        field: 'unitPrice', title: '商品单价', templet: function (d) {
+                            return d.unitPrice + '元';
+                        }
+                    },
+                    {
+                        field: 'quantity', title: '商品数量', templet: function (d) {
+                            return d.quantity + ' ' + d.unit_of_measurement;
+                        }
+                    },
+                    { field: 'barcode', title: '商品条形码' },
+                    { field: 'supplierName', title: '供应商' },
+                    { field: 'manufacturer', title: '生产商' },
+                    { field: 'operatorId', title: '操作员ID' },
+                    { field: 'restockTime', width: 175,title: '进货时间' },
+                    { fixed: 'right', toolbar: '#actionButtons', title: '操作' }
+                ]],
+                page: true,
+            });
+
+            // 监听表格工具条
+            table.on('tool(productTable)', function (obj) {
+                var data = obj.data;
+                var event = obj.event;
+
+                if (event === 'edit') {
+                    // 编辑商品
+                    layer.open({
+                        title: '编辑商品',
+                        type: 1,
+                        area: ['600px', '660px'],
+                        content: `
+                            <form id="editProductForm" class="layui-form" style="padding: 20px;">
+                                <input type="hidden" name="productId" value="${data.productId}">
+                                
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">商品ID</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" value="${data.productId}" disabled class="layui-input">
+                                    </div>
+                                </div>
+                                
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">商品名</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="productName" value="${data.productName}" required lay-verify="required" placeholder="请输入商品名称" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">商品类型</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="productType" value="${data.productType}" required lay-verify="required" placeholder="请输入商品类型" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">商品单价</label>
+                                    <div class="layui-input-block">
+                                        <input type="number" name="unitPrice" value="${data.unitPrice}" required lay-verify="required" placeholder="请输入商品价格" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">商品数量</label>
+                                    <div class="layui-input-block">
+                                        <div class="layui-input-inline" style="width: 50%;">
+                                            <input type="number" name="quantity" value="${data.quantity}" required lay-verify="required" placeholder="请输入商品数量" class="layui-input">
+                                        </div>
+                                        <div class="layui-input-inline" style="width: 30%;">
+                                            <input type="text" name="unit_of_measurement" value="${data.unit_of_measurement}" required lay-verify="required" placeholder="请输入单位" margin-left: 2px;" class="layui-input">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">商品条形码</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="barcode" value="${data.barcode || ''}" required lay-verify="required" placeholder="请输入商品条形码" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">供应商</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="supplierName" value="${data.supplierName || ''}" required lay-verify="required" placeholder="请输入供应商" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">生产商</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="manufacturer" value="${data.manufacturer || ''}" required lay-verify="required" placeholder="请输入生产商" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">操作员ID</label>
+                                    <div class="layui-input-block">
+                                        <input type="number" name="operatorId" value="${data.operatorId || 999}" class="layui-input">
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <div class="layui-input-block">
+                                        <button type="button" class="layui-btn" id="submitEditProduct">提交</button>
+                                    </div>
+                                </div>
+                            </form>
+                        `
+                    });
+
+                    // 提交编辑商品表单
+                    $('#submitEditProduct').click(function () {
+                        var formData = $('#editProductForm').serializeArray();
+                        var productData = {};
+                        $(formData).each(function () {
+                            // 转换数字类型字段
+                            if (['productId', 'unitPrice', 'quantity', 'operatorId'].includes(this.name)) {
+                                productData[this.name] = parseFloat(this.value);
+                            } else {
+                                productData[this.name] = this.value;
+                            }
+                        });
+                        
+                        delete productData.restockTime;
+                        
+                        console.log('编辑请求参数：', productData); // 此时不包含restockTime字段
+                        $.ajax({
+                            url: 'http://localhost:8081/api/product/edit',
+                            type: 'PUT',
+                            contentType: 'application/json',
+                            data: JSON.stringify(productData),
+                            success: function (res) {
+                                if (res.success) {
+                                    layer.msg('编辑成功');
+                                    table.reload('productTable');
+                                } else {
+                                    layer.msg('编辑失败: ' + res.message);
+                                }
+                            },
+                            error: function (err) {
+                                console.error('编辑请求错误：', err.responseText);
+                                layer.msg('请求失败，请稍后再试');
+                            }
+                        });
+                        layer.closeAll();
+                    });
+
+                } else if (event === 'delete') {
+                    // 删除商品
+                    layer.confirm('确认删除该商品吗？', { icon: 3, title: '提示' }, function (index) {
+                        $.ajax({
+                            url: 'http://localhost:8081/api/product/del',
+                            type: 'DELETE',
+                            data: JSON.stringify({ productId: data.productId }),
+                            contentType: 'application/json',
+                            success: function (res) {
+                                if (res.success) {
+                                    layer.msg('删除成功');
+                                    table.reload('productTable');
+                                } else {
+                                    layer.msg('删除失败: ' + res.message);
+                                }
+                            },
+                            error: function (err) {
+                                console.error(err);
+                                layer.msg('请求失败，请稍后再试');
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            // 添加商品按钮点击事件
+            $('#addProductBtn').click(function () {
+                // 弹出添加商品的窗口
+                layer.open({
+                    title: '添加商品',
+                    type: 1,
+                    area: ['600px', '600px'],
+                    content: `
+                        <form id="addProductForm" class="layui-form" style="padding: 20px;">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品名</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="productName" required lay-verify="required" placeholder="请输入商品名称" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品类型</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="productType" required lay-verify="required" placeholder="请输入商品类型" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品单价</label>
+                                <div class="layui-input-block">
+                                    <input type="number" name="unitPrice" required lay-verify="required" placeholder="请输入商品价格" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品数量</label>
+                                <div class="layui-input-block">
+                                    <div class="layui-input-inline" style="width: 50%;">
+                                        <input type="number" name="quantity" required lay-verify="required" placeholder="请输入商品数量" class="layui-input">
+                                    </div>
+                                    <div class="layui-input-inline" style="width: 30%;">
+                                        <input type="text" name="unit_of_measurement" required lay-verify="required" placeholder="请输入单位" class="layui-input">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">商品条形码</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="barcode" required lay-verify="required" placeholder="请输入商品条形码" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">供应商</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="supplierName" required lay-verify="required" placeholder="请输入供应商" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">生产商</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="manufacturer" required lay-verify="required" placeholder="请输入生产商" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">操作员ID</label>
+                                <div class="layui-input-block">
+                                    <input type="number" name="operatorId" value="999" disabled class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <div class="layui-input-block">
+                                    <button type="button" class="layui-btn" id="submitAddProduct">提交</button>
+                                </div>
+                            </div>
+                        </form>
+                    `
+                });
+
+                // 提交添加商品的表单
+                $('#submitAddProduct').click(function () {
+                    var formData = $('#addProductForm').serializeArray();
+                    var productData = {};
+                    $(formData).each(function () {
+                        // 转换数字类型字段
+                        if (['unitPrice', 'quantity', 'operatorId'].includes(this.name)) {
+                            productData[this.name] = parseFloat(this.value);
+                        } else {
+                            productData[this.name] = this.value;
+                        }
+                    });
+                    
+                    delete productData.restockTime;
+                    
+                    console.log('添加请求参数：', productData); // 此时不包含restockTime字段
+                    $.ajax({
+                        url: 'http://localhost:8081/api/product/add',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(productData),
+                        success: function (res) {
+                            if (res.success) {
+                                layer.msg('添加成功');
+                                table.reload('productTable');
+                            } else {
+                                layer.msg('添加失败: ' + res.message, {icon: 5});
+                            }
+                        },
+                        error: function (err) {
+                            console.error('添加请求错误：', err.responseText);
+                            layer.msg('请求失败，请稍后再试');
+                        }
+                    });
+                    layer.closeAll();
+                });
+            });
+        });
+    </script>
+
+    <script type="text/html" id="actionButtons">
+        <button class="layui-btn layui-btn-xs" lay-event="edit">编辑</button>
+        <button class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</button>
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>用户管理</title>
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/css/base.css">
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/css/iconfont.css">
+    <script type="text/javascript" src="../../smmm_html/framework/jquery-1.11.3.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/layui/css/layui.css">
+    <script type="text/javascript" src="../../smmm_html/layui/layui.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../smmm_html/css/jquery.mCustomScrollbar.css">
+    <script src="../../smmm_html/framework/jquery-ui-1.10.4.min.js"></script>
+    <script src="../../smmm_html/framework/jquery.mousewheel.min.js"></script>
+    <script src="../../smmm_html/framework/jquery.mCustomScrollbar.min.js"></script>
+    <script src="../../smmm_html/framework/cframe.js"></script>
+</head>
+
+<body>
+    <div style="padding: 20px;">
+        <button class="layui-btn" id="addUserBtn">添加用户</button>
+        <table class="layui-hide" id="userTable" lay-filter="userTable"></table>
+    </div>
+
+    <script>
+        layui.use(['table', 'layer', 'form', 'util'], function () {
+            var table = layui.table;
+            var layer = layui.layer;
+            var form = layui.form;
+            var util = layui.util;
+
+            // 渲染用户表格
+            table.render({
+                elem: '#userTable',
+                url: 'http://localhost:8081/api/admin/list',
+                method: 'get',
+                page: true,
+                cols: [[
+                    { field: 'id', title: '用户ID',  align: 'center' },
+                    { field: 'username', title: '用户名',  align: 'center' },
+                    { 
+                        field: 'password', 
+                        title: '密码', 
+                        align: 'center',
+                    },
+                    { 
+                        field: 'role', 
+                        title: '角色', 
+                        align: 'center',
+                        templet: function (d) {
+                            var roleMap = {
+                                "WAREHOUSE_MANAGER": "仓库管理员",
+                                "CASHIER": "收银员",
+                                "SYSTEM_ADMIN": "管理员",
+                                "PURCHASER": "进货员"
+                            };
+                            return roleMap[d.role] || d.role;
+                        }
+                    },
+                    { field: 'status', title: '账号状态', align: 'center' },
+                    { title: '操作', align: 'center', toolbar: '#actionButtons' }
+                ]],
+                parseData: function (res) {
+                    return {
+                        "code": res.success ? 0 : 1, // 转换为layui表格所需的code格式
+                        "msg": res.message,
+                        "count": res.data ? res.data.total : 0, // 假设data包含分页信息
+                        "data": res.data ? res.data.records : [] // 假设data包含数据列表
+                    };
+                }
+            });
+
+            // 添加用户按钮点击事件
+            $('#addUserBtn').click(function () {
+                openAddUserForm();
+            });
+
+            // 打开添加用户的表单
+            function openAddUserForm() {
+                layer.open({
+                    title: '添加用户',
+                    type: 1,
+                    area: ['450px', '440px'],
+                    content: `
+                        <form class="layui-form" style="padding: 20px;">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">用户名</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="username" id="username" class="layui-input" placeholder="请输入用户名" required>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">密码</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="password" id="password" class="layui-input" placeholder="请输入密码" required>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">角色</label>
+                                <div class="layui-input-block">
+                                    <select name="role" id="role" lay-verify="required">
+                                        <option value="">请选择角色</option>
+                                        <option value="WAREHOUSE_MANAGER">仓库管理员</option>
+                                        <option value="CASHIER">收银员</option>
+                                        <option value="SYSTEM_ADMIN">管理员</option>
+                                        <option value="PURCHASER">进货员</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">账号状态</label>
+                                <div class="layui-input-block">
+                                    <input type="radio" name="status" value="正常" title="正常" checked>
+                                    <input type="radio" name="status" value="锁定" title="锁定">
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <div class="layui-input-block">
+                                    <button type="button" class="layui-btn" id="saveButton">保存</button>
+                                    <button type="button" class="layui-btn layui-btn-primary" id="resetButton">重置</button>
+                                    <button type="button" class="layui-btn layui-btn-primary" id="cancelButton">取消</button>
+                                </div>
+                            </div>
+                        </form>
+                    `,
+                    success: function (layero, index) {
+                        form.render(); // 渲染表单元素
+                        
+                        // 重置按钮事件
+                        $('#resetButton').click(function () {
+                            $('#username, #password, #role').val('');
+                            $('input[name="status"]:first').prop('checked', true);
+                            form.render('radio'); // 重新渲染单选框
+                            $('.layui-form-item').removeClass('has-error'); // 清除高亮
+                        });
+
+                        $('#saveButton').click(function () {
+                            // 表单验证
+                            var isValid = true;
+                            var requiredFields = ['username', 'password', 'role'];
+                            
+                            // 重置所有高亮
+                            $('.layui-form-item').removeClass('has-error');
+                            
+                            // 检查必填字段
+                            requiredFields.forEach(function(field) {
+                                var value = $('#' + field).val();
+                                if (!value) {
+                                    isValid = false;
+                                    $('#' + field).closest('.layui-form-item').addClass('has-error');
+                                }
+                            });
+                            
+                            if (!isValid) {
+                                layer.msg('请填写所有必填字段', {icon: 2});
+                                return;
+                            }
+
+                            var userData = {
+                                "username": $('#username').val(),
+                                "password": $('#password').val(),
+                                "role": $('#role').val(),
+                                "status": $('input[name="status"]:checked').val()
+                            };
+
+                            $.ajax({
+                                url: 'http://localhost:8081/api/admin/add',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify(userData),
+                                success: function (res) {
+                                    if (res.success) {
+                                        layer.msg(res.message, {icon: 1});
+                                        table.reload('userTable');
+                                        layer.close(index);
+                                    } else {
+                                        layer.msg(res.message, {icon: 2});
+                                    }
+                                },
+                                error: function (jqXHR) {
+                                    layer.msg('请求失败: ' + (jqXHR.responseJSON?.message || '未知错误'), {icon: 2});
+                                }
+                            });
+                        });
+
+                        $('#cancelButton').click(function () {
+                            layer.close(index);
+                        });
+                    }
+                });
+            }
+
+            // 操作按钮事件
+            table.on('tool(userTable)', function (obj) {
+                var data = obj.data;
+                var event = obj.event;
+
+                if (event === 'edit') {
+                    layer.open({
+                        title: '编辑用户信息',
+                        type: 1,
+                        area: ['450px', '495px'],
+                        content: `
+                            <form class="layui-form" style="padding: 20px;">
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">用户ID</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="account_id" id="account_id" value="${data.id}" class="layui-input" disabled>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">用户名</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="username" id="username" value="${data.username}" class="layui-input" required>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">密码</label>
+                                    <div class="layui-input-block">
+                                        <input type="text" name="password" id="password" value="${data.password}" class="layui-input" required>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">角色</label>
+                                    <div class="layui-input-block">
+                                        <select name="role" id="role" lay-verify="required">
+                                            <option value="">请选择角色</option>
+                                            <option value="WAREHOUSE_MANAGER" ${data.role === 'WAREHOUSE_MANAGER' ? 'selected' : ''}>仓库管理员</option>
+                                            <option value="CASHIER" ${data.role === 'CASHIER' ? 'selected' : ''}>收银员</option>
+                                            <option value="SYSTEM_ADMIN" ${data.role === 'SYSTEM_ADMIN' ? 'selected' : ''}>管理员</option>
+                                            <option value="PURCHASER" ${data.role === 'PURCHASER' ? 'selected' : ''}>进货员</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <label class="layui-form-label">账号状态</label>
+                                    <div class="layui-input-block">
+                                        <input type="radio" name="status" value="正常" title="正常" ${data.status === '正常' ? 'checked' : ''}>
+                                        <input type="radio" name="status" value="锁定" title="锁定" ${data.status === '锁定' ? 'checked' : ''}>
+                                    </div>
+                                </div>
+                                <div class="layui-form-item">
+                                    <div class="layui-input-block">
+                                        <button type="button" class="layui-btn" id="saveButton">保存</button>
+                                        <button type="button" class="layui-btn layui-btn-primary" id="cancelButton">取消</button>
+                                    </div>
+                                </div>
+                            </form>
+                        `,
+                        success: function (layero, index) {
+                            form.render(); // 渲染表单元素
+
+                            $('#saveButton').click(function () {
+                                // 表单验证
+                                var isValid = true;
+                                var requiredFields = ['username', 'password', 'role'];
+                                
+                                // 重置所有高亮
+                                $('.layui-form-item').removeClass('has-error');
+                                
+                                requiredFields.forEach(function(field) {
+                                    var value = $('#' + field).val();
+                                    if (!value) {
+                                        isValid = false;
+                                        $('#' + field).closest('.layui-form-item').addClass('has-error');
+                                    }
+                                });
+                                
+                                if (!isValid) {
+                                    layer.msg('请填写所有必填字段', {icon: 2});
+                                    return;
+                                }
+
+                                var updatedData = {
+                                    "account_id": data.id,
+                                    "username": $('#username').val(),
+                                    "password": $('#password').val(),
+                                    "role": $('#role').val(),
+                                    "status": $('input[name="status"]:checked').val()
+                                };
+
+                                $.ajax({
+                                    url: 'http://localhost:8081/api/admin/edit',
+                                    type: 'PUT',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify(updatedData),
+                                    success: function (res) {
+                                        if (res.success) {
+                                            layer.msg(res.message, {icon: 1});
+                                            table.reload('userTable');
+                                            layer.close(index);
+                                        } else {
+                                            layer.msg(res.message, {icon: 2});
+                                        }
+                                    },
+                                    error: function (jqXHR) {
+                                        // 处理用户名重复的500错误
+                                        if (jqXHR.status === 500) {
+                                            layer.msg('用户名已存在', { icon: 2 });
+                                        } else {
+                                            layer.msg('请求失败: ' + (jqXHR.statusText || '未知错误'), { icon: 2 });
+                                        }
+                                    }
+                                });
+                            });
+
+                            $('#cancelButton').click(function () {
+                                layer.close(index);
+                            });
+                        }
+                    });
+                } else if (event === 'delete') {
+                    layer.confirm('确定删除该用户吗？', { icon: 3, title: '提示' }, function (confirmIndex) {
+                        $.ajax({
+                            url: 'http://localhost:8081/api/admin/del',
+                            type: 'DELETE',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ account_id: data.id }),
+                            success: function (res) {
+                                if (res.success) {
+                                    layer.msg(res.message, {icon: 1});
+                                    table.reload('userTable');
+                                } else {
+                                    layer.msg(res.message, {icon: 2});
+                                }
+                                layer.close(confirmIndex);
+                            },
+                            error: function (jqXHR) {
+                                layer.msg('请求失败: ' + (jqXHR.responseJSON?.message || '未知错误'), {icon: 2});
+                                layer.close(confirmIndex);
+                            }
+                        });
+                    });
+                }
+            });
+            
+            // 添加表单验证样式
+            $('head').append(`
+                <style>
+                    .has-error .layui-input {
+                        border-color: #FF5722 !important;
+                    }
+                    .has-error .layui-form-label {
+                        color: #FF5722 !important;
+                    }
+                </style>
+            `);
+        });
+    </script>
+
+    <script type="text/html" id="actionButtons">
+        <button class="layui-btn layui-btn-xs" lay-event="edit">编辑</button>
+        <button class="layui-btn layui-btn-danger layui-btn-xs" lay-event="delete">删除</button>
+    </script>
+
+</html>

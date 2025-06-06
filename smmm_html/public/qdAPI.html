@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+    <head>  
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1">
+        <!-- Google Chrome Frame也可以让IE用上Chrome的引擎: -->
+        <meta name="renderer" content="webkit">
+        <!--国产浏览器高速模式-->
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>穷在闹市出品</title>
+
+        <!-- 公共样式 开始 -->
+        <link rel="stylesheet" type="text/css" href="../css/base.css">
+        <link rel="stylesheet" type="text/css" href="../css/iconfont.css">
+        <script type="text/javascript" src="../framework/jquery-1.11.3.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="../layui/css/layui.css">
+        <script type="text/javascript" src="../layui/layui.js"></script>
+        <!-- 滚动条插件 -->
+        <link rel="stylesheet" type="text/css" href="../css/jquery.mCustomScrollbar.css">
+        <script src="../framework/jquery-ui-1.10.4.min.js"></script>
+        <script src="../framework/jquery.mousewheel.min.js"></script>
+        <script src="../framework/jquery.mCustomScrollbar.min.js"></script>
+        <script src="../framework/cframe.js"></script><!-- 仅供所有子页面使用 -->
+        <!-- 公共样式 结束 -->
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+                background-color: #f9f9f9;
+            }
+            .container {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                padding: 20px;
+                max-width: 1500px; /* 页面宽度 */
+                margin: 0 auto;
+            }
+            .left-section {
+                width: 65%;
+            }
+            .welcome-section,
+            .announcement,
+            .calendar-section {
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                box-sizing: border-box;
+                margin-bottom: 20px;
+            }
+            .welcome-section {
+                text-align: center;
+                font-size: 2.2em; /* 字体更大 */
+                font-weight: bold;
+            }
+            .announcement {
+                font-size: 1.2em;
+            }
+            .announcement p {
+                margin-left: 2ch; /* 增加两个字符的缩进 */
+            }
+            .calendar-section {
+                width: 33%; /* 日历部分宽度 */
+                min-height: 500px; /* 增大日历区域 */
+                text-align: center;
+            }
+            #calendar .layui-laydate-content {
+                font-size: 1.4em; /* 增大日历内容的字体 */
+                height: 100%;
+            }
+            #calendar {
+                height: 100%; /* 使日历组件尽量填满容器 */
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- 左侧：欢迎信息和公告 -->
+            <div class="left-section">
+                <div class="welcome-section">
+                    欢迎回来！
+                </div>
+                <div class="announcement">
+                    <h3 style="margin-bottom: 10px;">公告：</h3>
+                    <p id="announcement" style="line-height: 1.5;">暂无公告内容。</p>
+                </div>
+            </div>
+            <!-- 右侧：日历 -->
+            <div class="calendar-section">
+                <div id="calendar"></div>
+            </div>
+        </div>
+
+        <script>
+            layui.use(['laydate'], function() {
+                var laydate = layui.laydate;
+
+                // 设置公告内容
+                document.getElementById("announcement").textContent = "系统将在今晚12点进行维护，请提前保存数据。";
+
+                // 初始化日历
+                laydate.render({
+                    elem: '#calendar',
+                    position: 'static',
+                    theme: '#1E9FFF',
+                    calendar: true
+                });
+            });
+        </script>
+    </body>
+</html>
