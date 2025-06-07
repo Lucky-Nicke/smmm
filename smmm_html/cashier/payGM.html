@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1">
+    <meta name="renderer" content="webkit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>收银</title>
+    <link rel="stylesheet" type="text/css" href="../css/base.css">
+    <link rel="stylesheet" type="text/css" href="../css/iconfont.css">
+    <script type="text/javascript" src="../framework/jquery-1.11.3.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../layui/css/layui.css">
+    <script type="text/javascript" src="../layui/layui.js"></script>
+    <style>
+        /* 让操作按钮垂直居中对齐 */
+        #productTable tbody td button {
+            vertical-align: middle;
+            margin: 0 2px; /* 添加一些左右外边距，让按钮之间有间隔 */
+        }
+
+        /* 为结账和重置按钮容器添加样式 */
+        .button-container {
+            margin-top: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="padding: 20px;">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">条形码</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="barcode" name="barcode" placeholder="请输入商品条形码" class="layui-input">
+                </div>
+                <div class="layui-input-inline">
+                    <button type="button" class="layui-btn" id="scanBtn">模拟扫码枪扫描</button>
+                </div>
+            </div>
+        </form>
+        <table class="layui-table" id="productTable">
+            <thead>
+                <tr>
+                    <th>商品名字</th>
+                    <th>条形码</th>
+                    <th>单品价格</th>
+                    <th>单品数量</th>
+                    <th>单个商品总金额</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6">全部商品总金额：<span id="totalAmountDisplay">0.00</span></td>
+                </tr>
+            </tfoot>
+        </table>
+        <!-- 将结账和重置按钮放到表格之后 -->
+        <div class="button-container">
+            <button type="button" class="layui-btn layui-btn-danger" id="checkoutBtn">结账</button>
+            <button type="button" class="layui-btn" id="resetBtn">重置</button>
+        </div>
+    </div>
+
+    <script>
+        layui.use(['jquery', 'layer'], function () {
+            var $ = layui.jquery;
+            var layer = layui.layer;
+            var productList = [];
+
+            // 模拟扫码枪扫描按钮点击事件
+            $('#scanBtn').click(function () {
+                var barcode = $('#barcode').val();
+                if (!barcode) {
+                    layer.msg('请输入商品条形码');
+                    return;
+                }
+
+                $.ajax({
+                    url: `http://localhost:8081/api/casher/search?barcode=${barcode}`,
+                    type: 'GET',
+                    success: function (res) {
+                        if (res.success) {
+                            var product = res.data[0];
+                            var existingProduct = productList.find(p => p.barcode === product.barcode);
+                            if (existingProduct) {
+                                existingProduct.quantity++;
+                                existingProduct.totalPrice = existingProduct.unitPrice * existingProduct.quantity;
+                            } else {
+                                product.quantity = 1;
+                                product.totalPrice = product.unitPrice;
+                                productList.push(product);
+                            }
+                            updateTable();
+                        } else {
+                            layer.msg('查询失败: ' + res.message);
+                        }
+                    },
+                    error: function () {
+                        layer.msg('请求失败，请稍后再试');
+                    }
+                });
+            });
+
+            // 结账按钮点击事件
+            $('#checkoutBtn').click(function () {
+                if (productList.length === 0) {
+                    layer.msg('没有商品需要结账');
+                    return;
+                }
+
+                layer.confirm('确认要结账吗？', {
+                    btn: ['确认', '取消']
+                }, function (index) {
+                    if (productList.length === 1) {
+                        // 只有一个商品，调用单个商品结账接口
+                        var product = productList[0];
+                        var checkoutData = {
+                            barcode: product.barcode,
+                            quantity: parseFloat(product.quantity)
+                        };
+
+                        console.log('Checkout data:', checkoutData); // 输出结账数据
+
+                        $.ajax({
+                            url: 'http://localhost:8081/api/casher/checkout',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(checkoutData),
+                            success: function (res) {
+                                if (res.success) {
+                                    layer.msg('结账成功');
+                                    // 移除已结账的商品
+                                    productList.shift(); 
+                                    resetTable();
+                                    updateTable();
+                                } else {
+                                    layer.msg('结账失败: ' + res.message);
+                                }
+                            },
+                            error: function (xhr) {
+                                var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : '请求失败，请稍后再试';
+                                layer.msg('结账失败: ' + errorMsg);
+                            }
+                        });
+                    } else {
+                        // 多个商品，调用批量结账接口
+                        var batchCheckoutData = productList.map(product => ({
+                            barcode: product.barcode,
+                            quantity: parseFloat(product.quantity)
+                        }));
+
+                        console.log('Batch checkout data:', batchCheckoutData); // 输出批量结账数据
+
+                        $.ajax({
+                            url: 'http://localhost:8081/api/casher/checkout/batch',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(batchCheckoutData),
+                            success: function (res) {
+                                if (res.success) {
+                                    layer.msg('结账成功');
+                                    // 清空商品列表
+                                    productList = []; 
+                                    resetTable();
+                                    updateTable();
+                                } else {
+                                    layer.msg('结账失败: ' + res.message);
+                                }
+                            },
+                            error: function (xhr) {
+                                var errorMsg = xhr.responseJSON ? xhr.responseJSON.message : '请求失败，请稍后再试';
+                                layer.msg('结账失败: ' + errorMsg);
+                            }
+                        });
+                    }
+                    layer.close(index); // 关闭确认窗口
+                });
+            });
+
+            // 重置按钮点击事件，添加确认窗口
+            $('#resetBtn').click(function () {
+                layer.confirm('确认要重置吗？', {
+                    btn: ['确认', '取消']
+                }, function (index) {
+                    resetTable();
+                    layer.close(index); // 关闭确认窗口
+                });
+            });
+
+            // 更新表格数据
+            function updateTable() {
+                var tableBody = $('#productTable tbody');
+                tableBody.empty();
+                var totalAmount = 0;
+
+                productList.forEach((product, index) => {
+                    var row = `<tr>
+                        <td>${product.productName}</td>
+                        <td>${product.barcode}</td>
+                        <td>${product.unitPrice.toFixed(2)}</td>
+                        <td>${product.quantity}</td>
+                        <td>${product.totalPrice.toFixed(2)}</td>
+                        <td>
+                            <button type="button" class="layui-btn layui-btn-sm" onclick="increaseQuantity(${index})">+</button>
+                            <button type="button" class="layui-btn layui-btn-sm" onclick="decreaseQuantity(${index})">-</button>
+                            <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" onclick="deleteProduct(${index})">删除</button>
+                        </td>
+                    </tr>`;
+                    tableBody.append(row);
+                    totalAmount += product.totalPrice;
+                });
+
+                $('#totalAmountDisplay').text(totalAmount.toFixed(2));
+            }
+
+            // 重置表格数据
+            function resetTable() {
+                productList = [];
+                $('#barcode').val('');
+                $('#productTable tbody').empty();
+                $('#totalAmountDisplay').text('0.00');
+            }
+
+            // 增加商品数量
+            window.increaseQuantity = function (index) {
+                var product = productList[index];
+                product.quantity++;
+                product.totalPrice = product.unitPrice * product.quantity;
+                updateTable();
+            }
+
+            // 减少商品数量
+            window.decreaseQuantity = function (index) {
+                var product = productList[index];
+                if (product.quantity > 1) {
+                    product.quantity--;
+                    product.totalPrice = product.unitPrice * product.quantity;
+                    updateTable();
+                }
+            }
+
+            // 删除商品
+            window.deleteProduct = function (index) {
+                productList.splice(index, 1);
+                updateTable();
+            }
+        });
+    </script>
+</body>
+
+</html>

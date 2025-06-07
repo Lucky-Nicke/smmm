@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -20,6 +22,23 @@ public class CashierController {
         this.productService = productService;
     }
 
+    @PostMapping("/checkout/batch")
+    public ResponseEntity<ApiResponse<List<Product>>> checkoutBatch(@RequestBody List<CheckoutRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("请求不能为空"));
+        }
+
+        try {
+            List<Product> checkedOutProducts = productService.checkoutProducts(requests);
+            return ResponseEntity.ok(ApiResponse.success("结账成功", checkedOutProducts));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(ApiResponse.error("结账失败：" + e.getMessage()));
+        }
+    }
+
+    // 原单个商品结账接口保留（可选）
     @PostMapping("/checkout")
     public ResponseEntity<ApiResponse<?>> checkout(@RequestBody CheckoutRequest request) {
         // 参数校验
@@ -49,5 +68,34 @@ public class CashierController {
                 "结账成功",
                 Collections.singletonList(updatedProduct)
         ));
+    }
+
+    // 条形码搜索接口（保持不变）
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> searchByBarcode(@RequestParam String barcode) {
+        // 参数校验
+        if (barcode == null || barcode.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("条形码不能为空"));
+        }
+
+        // 查询商品
+        Optional<Product> productOptional = productService.findByBarcode(barcode);
+
+        if (productOptional.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success("未找到匹配商品", Collections.emptyList()));
+        }
+
+        Product product = productOptional.get();
+
+        // 构建返回结果
+        List<Map<String, Object>> resultList = Collections.singletonList(
+                Map.of(
+                        "productName", product.getProductName(),
+                        "unitPrice", product.getUnitPrice(),
+                        "barcode", product.getBarcode()
+                )
+        );
+
+        return ResponseEntity.ok(ApiResponse.success("查询成功", resultList));
     }
 }

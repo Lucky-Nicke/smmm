@@ -1,5 +1,6 @@
 package club.lanxige.smmm.service;
 
+import club.lanxige.smmm.dto.CheckoutRequest;
 import club.lanxige.smmm.dto.ProductDto;
 import club.lanxige.smmm.entity.Product;
 
@@ -16,4 +17,6 @@ public interface ProductService {
 
     // 新增方法：获取产品总数
     long getTotalCount();
+
+    List<Product> checkoutProducts(List<CheckoutRequest> checkoutItems);
 }

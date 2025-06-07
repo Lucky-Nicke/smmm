@@ -1,5 +1,6 @@
 package club.lanxige.smmm.service.impl;
 
+import club.lanxige.smmm.dto.CheckoutRequest;
 import club.lanxige.smmm.dto.ProductDto;
 import club.lanxige.smmm.entity.Product;
 import club.lanxige.smmm.dao.ProductRepository;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,6 +21,37 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Override
+    public List<Product> checkoutProducts(List<CheckoutRequest> checkoutItems) {
+        List<Product> checkedOutProducts = new ArrayList<>();
+
+        for (CheckoutRequest item : checkoutItems) {
+            Optional<Product> optionalProduct = findByBarcode(item.getBarcode());
+            if (optionalProduct.isEmpty()) {
+                throw new IllegalArgumentException("商品不存在，条形码: " + item.getBarcode());
+            }
+
+            Product product = optionalProduct.get();
+
+            if (product.getQuantity() == null || product.getQuantity().intValue() < item.getQuantity()) {
+                throw new IllegalArgumentException("库存不足，商品: " + product.getProductName());
+            }
+
+            // 保存原始库存数量，用于返回信息
+            int originalQuantity = product.getQuantity().intValue();
+
+            // 更新库存
+            product.setQuantity(BigDecimal.valueOf(originalQuantity - item.getQuantity()));
+            Product updatedProduct = productRepository.save(product);
+
+            // 设置实际购买的数量（而不是剩余库存）
+            updatedProduct.setQuantity(BigDecimal.valueOf(item.getQuantity()));
+            checkedOutProducts.add(updatedProduct);
+        }
+
+        return checkedOutProducts;
+    }
 
     // 查询所有产品
     @Override
