@@ -33,6 +33,13 @@
             var layer = layui.layer;
             var util = layui.util;
 
+            // 获取Cookie中的userId
+            function getCookie(name) {
+                var value = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+                return value ? value.pop() : '';
+            }
+            var userId = getCookie('userId');
+
             // 渲染表格
             table.render({
                 elem: '#productTable',
@@ -56,7 +63,7 @@
                     { field: 'supplierName', title: '供应商' },
                     { field: 'manufacturer', title: '生产商' },
                     { field: 'operatorId', title: '操作员ID' },
-                    { field: 'restockTime', width: 175,title: '进货时间' },
+                    { field: 'restockTime', width: 175, title: '进货时间' },
                     { fixed: 'right', toolbar: '#actionButtons', title: '操作' }
                 ]],
                 page: true,
@@ -134,7 +141,7 @@
                                 <div class="layui-form-item">
                                     <label class="layui-form-label">操作员ID</label>
                                     <div class="layui-input-block">
-                                        <input type="number" name="operatorId" value="999" disabled class="layui-input">
+                                        <input type="number" name="operatorId" value="${userId}" disabled class="layui-input">
                                     </div>
                                 </div>
                                 <div class="layui-form-item">
@@ -146,44 +153,68 @@
                         `
                     });
 
-                    // 提交编辑商品表单
-                    $('#submitEditProduct').click(function () {
-                        var formData = $('#editProductForm').serializeArray();
-                        var productData = {};
-                        $(formData).each(function () {
-                            // 转换数字类型字段
-                            if (['productId', 'unitPrice', 'quantity', 'operatorId'].includes(this.name)) {
-                                productData[this.name] = parseFloat(this.value);
-                            } else {
-                                productData[this.name] = this.value;
-                            }
-                        });
-                        
-                        productData.operatorId = 999;
-
-                        delete productData.restockTime;
-                        
-                        console.log('编辑请求参数：', productData); // 此时不包含restockTime字段
-                        $.ajax({
-                            url: 'http://localhost:8081/api/product/edit',
-                            type: 'PUT',
-                            contentType: 'application/json',
-                            data: JSON.stringify(productData),
-                            success: function (res) {
-                                if (res.success) {
-                                    layer.msg('编辑成功');
-                                    table.reload('productTable');
-                                } else {
-                                    layer.msg('编辑失败: ' + res.message);
-                                }
-                            },
-                            error: function (err) {
-                                console.error('编辑请求错误：', err.responseText);
-                                layer.msg('请求失败，请稍后再试');
-                            }
-                        });
-                        layer.closeAll();
+                // 提交编辑商品表单
+                $('#submitEditProduct').click(function () {
+                    var formData = $('#editProductForm').serializeArray();
+                    var productData = {};
+                    $(formData).each(function () {
+                        // 转换数字类型字段
+                        if (['productId', 'unitPrice', 'quantity', 'operatorId'].includes(this.name)) {
+                            productData[this.name] = parseFloat(this.value);
+                        } else {
+                            productData[this.name] = this.value;
+                        }
                     });
+
+                    // 验证表单是否为空
+                    var isValid = true;
+                    $('#editProductForm input').each(function () {
+                        if ($(this).val().trim() === '') {
+                            $(this).css('border-color', 'red'); // 高亮显示空字段
+                            isValid = false;
+                        } else {
+                            $(this).css('border-color', ''); // 移除高亮
+                        }
+                    });
+
+                    if (!isValid) {
+                        layer.msg('请填写所有必填项');
+                        return; // 禁止提交表单
+                    }
+
+                    // 强制使用Cookie中的userId（防止前端篡改）
+                    productData.operatorId = parseFloat(userId);
+
+                    delete productData.restockTime;
+
+                    console.log('编辑请求参数：', productData); // 此时不包含restockTime字段
+                    $.ajax({
+                        url: 'http://localhost:8081/api/product/edit',
+                        type: 'PUT',
+                        contentType: 'application/json',
+                        data: JSON.stringify(productData),
+                        success: function (res) {
+                            if (res.success) {
+                                layer.msg('编辑成功');
+                                table.reload('productTable');
+                            } else {
+                                layer.msg('编辑失败: ' + res.message);
+                            }
+                        },
+                        error: function (err) {
+                            console.error('编辑请求错误：', err.responseText);
+                            layer.msg('请求失败，请稍后再试');
+                        }
+                    });
+                    layer.closeAll();
+                });
+
+                // 监听输入框的变化，移除高亮显示
+                $('#editProductForm input').on('input', function () {
+                    if ($(this).val().trim() !== '') {
+                        $(this).css('border-color', ''); // 移除高亮
+                    }
+                });
 
                 } else if (event === 'delete') {
                     // 删除商品
@@ -270,7 +301,7 @@
                             <div class="layui-form-item">
                                 <label class="layui-form-label">操作员ID</label>
                                 <div class="layui-input-block">
-                                    <input type="number" name="operatorId" value="999" disabled class="layui-input">
+                                    <input type="number" name="operatorId" value="${userId}" disabled class="layui-input">
                                 </div>
                             </div>
                             <div class="layui-form-item">
@@ -294,9 +325,28 @@
                             productData[this.name] = this.value;
                         }
                     });
-                    
+
+                    // 验证表单是否为空
+                    var isValid = true;
+                    $('#addProductForm input').each(function () {
+                        if ($(this).val().trim() === '') {
+                            $(this).css('border-color', 'red'); // 高亮显示空字段
+                            isValid = false;
+                        } else {
+                            $(this).css('border-color', ''); // 移除高亮
+                        }
+                    });
+
+                    if (!isValid) {
+                        layer.msg('请填写所有必填项');
+                        return; // 禁止提交表单
+                    }
+
+                    // 强制使用Cookie中的userId（防止前端篡改）
+                    productData.operatorId = parseFloat(userId);
+
                     delete productData.restockTime;
-                    
+
                     console.log('添加请求参数：', productData); // 此时不包含restockTime字段
                     $.ajax({
                         url: 'http://localhost:8081/api/product/add',
@@ -317,6 +367,13 @@
                         }
                     });
                     layer.closeAll();
+                });
+
+                // 监听输入框的变化，移除高亮显示
+                $('#addProductForm input').on('input', function () {
+                    if ($(this).val().trim() !== '') {
+                        $(this).css('border-color', ''); // 移除高亮
+                    }
                 });
             });
         });

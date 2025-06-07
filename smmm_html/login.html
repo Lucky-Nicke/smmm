@@ -65,6 +65,37 @@
                 </form>
             </div>
             <script>
+                // Cookie操作工具函数
+                const CookieUtil = {
+                    // 设置cookie
+                    set: function(name, value, days) {
+                        let expires = "";
+                        if (days) {
+                            const date = new Date();
+                            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                            expires = "; expires=" + date.toUTCString();
+                        }
+                        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+                    },
+                    
+                    // 获取cookie
+                    get: function(name) {
+                        const nameEQ = name + "=";
+                        const ca = document.cookie.split(';');
+                        for(let i=0; i < ca.length; i++) {
+                            let c = ca[i];
+                            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+                        }
+                        return null;
+                    },
+                    
+                    // 删除cookie
+                    delete: function(name) {
+                        document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    }
+                };
+
                 layui.use(['form', 'jquery', 'layer'], function() {
                     var form = layui.form;
                     var $ = layui.jquery;
@@ -75,21 +106,24 @@
                         var account = data.field.userName;  // 获取用户名
                         var password = data.field.passWord; // 获取密码
 
-                        // 发送登录请求（接口替换为新地址）
+                        // 发送登录请求
                         $.ajax({
-                            url: 'http://localhost:8081/api/auth/login',  // 新接口地址
+                            url: 'http://localhost:8081/api/auth/login',  // 接口地址
                             type: 'POST',
                             contentType: 'application/json',
-                            data: JSON.stringify({ username: account, password: password }), // 字段调整为username和password
+                            data: JSON.stringify({ username: account, password: password }),
                             success: function(response) {
-                                // 假设后端直接返回数据，无需data字段
-                                var userData = response;
                                 if (response.success) {
-                                    // 登录成功，保存用户信息到Cookies（根据实际返回数据调整）
-                                    document.cookie = "username=" + (userData.username || '') + "; path=/";
+                                    // 登录成功，保存用户信息到Cookies
+                                    if (response.data) {
+                                        CookieUtil.set("userId", response.data.id);
+                                        CookieUtil.set("username", response.data.username);
+                                        CookieUtil.set("role", response.role);
+                                    }
+                                    
                                     // 登录成功后跳转路径
-                                    if (userData.redirectUrl) {
-                                        window.location.href = userData.redirectUrl; // 跳转到指定页面
+                                    if (response.redirectUrl) {
+                                        window.location.href = response.redirectUrl; // 跳转到指定页面
                                     } else {
                                         layer.msg("登录成功，但未提供跳转路径", { icon: 1, time: 2000 });
                                     }

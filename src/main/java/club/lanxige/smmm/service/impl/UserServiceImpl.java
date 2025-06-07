@@ -29,26 +29,26 @@ public class UserServiceImpl implements UserService {
         User user = userOptional.get();
 
         // 对比密码（确保实体类有getPassword()方法）
-        if (!user.getPassword().equals(request.getPassword())) { // 调用getPassword()
+        if (!user.getPassword().equals(request.getPassword())) {
             return LoginResponse.error("密码错误");
         }
 
-        // 检查状态（根据枚举定义选择中文或英文）
-        if (user.getStatus() == User.Status.锁定) { // 中文枚举值
-            // 如果是英文枚举：if (user.getStatus() == User.Status.LOCKED) {
+        // 检查状态
+        if (user.getStatus() == User.Status.锁定) {
             return LoginResponse.error("账号已锁定");
         }
 
         String redirectUrl = getRedirectUrlByRole(user.getRole());
-        return LoginResponse.success("登录成功", redirectUrl, user.getRole());
+        // 传递用户ID和用户名
+        return LoginResponse.success("登录成功", redirectUrl, user.getRole(), user.getId(), user.getUsername());
     }
 
     private String getRedirectUrlByRole(User.Role role) {
         return switch (role) {
-            case WAREHOUSE_MANAGER -> "/smmm/smmm_html/warehouse/admin-frame.html";
+            case WAREHOUSE_MANAGER -> "/smmm/smmm_html/warehouse/warehouse-frame.html";
             case CASHIER -> "/smmm/smmm_html/cashier/cashier-frame.html";
             case SYSTEM_ADMIN -> "/smmm/smmm_html/admin/admin-frame.html";
-            case PURCHASER -> "/smmm/smmm_html/purchase/orders";
+            case PURCHASER -> "/smmm/smmm_html/purchaser/purchaser-frame.html";
         };
     }
     @Override

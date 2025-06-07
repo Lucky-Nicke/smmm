@@ -17,13 +17,26 @@ public class LoginResponse {
     private boolean success;
     private String redirectUrl;
     private User.Role role;
+    private UserData data; // 添加数据字段
 
-    public static LoginResponse success(String message, String redirectUrl, User.Role role) {
+    // 用户数据内部类
+    @Data
+    @Builder
+    public static class UserData {
+        private Integer id;
+        private String username;
+    }
+
+    public static LoginResponse success(String message, String redirectUrl, User.Role role, Integer userId, String username) {
         return builder()
                 .success(true)
                 .message(message)
                 .redirectUrl(redirectUrl)
                 .role(role)
+                .data(UserData.builder()
+                        .id(userId)
+                        .username(username)
+                        .build())
                 .build();
     }
 
