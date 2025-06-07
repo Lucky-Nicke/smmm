@@ -38,15 +38,12 @@ public class ProductServiceImpl implements ProductService {
                 throw new IllegalArgumentException("库存不足，商品: " + product.getProductName());
             }
 
-            // 保存原始库存数量，用于返回信息
-            int originalQuantity = product.getQuantity().intValue();
-
             // 更新库存
-            product.setQuantity(BigDecimal.valueOf(originalQuantity - item.getQuantity()));
+            product.setQuantity(BigDecimal.valueOf(product.getQuantity().intValue() - item.getQuantity()));
             Product updatedProduct = productRepository.save(product);
 
-            // 设置实际购买的数量（而不是剩余库存）
-            updatedProduct.setQuantity(BigDecimal.valueOf(item.getQuantity()));
+            // 为了清晰显示购买信息，可以创建一个新对象或使用DTO
+            // 但不要修改已经保存到数据库的对象
             checkedOutProducts.add(updatedProduct);
         }
 
