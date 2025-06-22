@@ -60,6 +60,32 @@
                     { fixed: 'right', toolbar: '#actionButtons', title: '操作' }
                 ]],
                 page: true,
+                done: function (res, curr, count) {
+                    if (!res) {
+                        layer.msg('数据加载失败', { icon: 5 });
+                    } else if (res.data.length === 0) {
+                        console.log('暂无商品数据');
+                    } else {
+                        console.log('成功加载', res.data.length, '条记录');
+
+                        var dataRows = this.elem.next().find('.layui-table-body tr');
+
+                        dataRows.each(function (i, tr) {
+                            var rowData = res.data[i];
+
+                            if (rowData && parseFloat(rowData.quantity) === 0) {
+                                // 整行变红
+                                $(tr).find('td').css('color', '#f5222d');
+
+                                // 在“数量”列中添加“补货”标记
+                                var quantityCell = $(tr).find('td[data-field="quantity"] .layui-table-cell');
+                                quantityCell.append(
+                                    '<span class="layui-badge layui-bg-red" style="margin-left: 5px; vertical-align: middle;">补货</span>'
+                                );
+                            }
+                        });
+                    }
+                }
             });
 
             // 监听表格工具条
